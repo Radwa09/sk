@@ -12,6 +12,15 @@ interface User {
     lastActive?: string;
     count?: number;
     status?: string;
+    phone?: string;
+    gender?: 'male' | 'female' | 'other';
+    dob?: string;
+    avatar?: 'male' | 'female';
+    notifications?: {
+        scanReminders: boolean;
+        protocolNotifications: boolean;
+        productUpdates: boolean;
+    };
 }
 
 interface ScanResult {
@@ -38,7 +47,7 @@ interface AuthContextType {
     activities: Activity[];
     loading: boolean;
     login: (email: string, password?: string) => Promise<void>;
-    signup: (email: string, password?: string, name?: string) => Promise<void>;
+    signup: (email: string, password?: string, name?: string, metadata?: Partial<User>) => Promise<void>;
     logout: () => Promise<void>;
     updateProfile: (newData: Partial<User>, activityTitle?: string) => void;
     updateUserRole: (userId: string, newRole: 'user' | 'admin') => Promise<void>;
@@ -96,12 +105,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 
                 if (historyData) setHistory(historyData);
 
-                // 2. Fetch Activities
+                // 2. Fetch Activity Logs
                 const { data: activityData } = await supabase
-                    .from('activities')
+                    .from('activity_logs')
                     .select('*')
                     .eq('user_id', userId)
-                    .order('date', { ascending: false });
+                    .order('created_at', { ascending: false });
                 
                 if (activityData) setActivities(activityData);
 
@@ -166,8 +175,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             name: sbUser.user_metadata?.full_name || sbUser.email?.split('@')[0] || 'Clinical User',
             role: (sbUser.user_metadata?.role as any) || role,
             date: new Date(sbUser.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+            lastActive: sbUser.last_sign_in_at || new Date().toISOString(),
             count: 0,
-            status: 'Active'
+            status: 'Active',
+            phone: sbUser.user_metadata?.phone,
+            gender: sbUser.user_metadata?.gender,
+            dob: sbUser.user_metadata?.dob,
+            avatar: sbUser.user_metadata?.avatar || 'female',
+            notifications: sbUser.user_metadata?.notifications || {
+                scanReminders: true,
+                protocolNotifications: true,
+                productUpdates: true
+            }
         };
         setUser(mappedUser);
         localStorage.setItem('auth_user', JSON.stringify(mappedUser));
@@ -178,7 +197,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             name: mappedUser.name,
             email: mappedUser.email,
             role: mappedUser.role,
-            last_sign_in_at: new Date().toISOString()
+            last_sign_in_at: new Date().toISOString(),
+            notifications: mappedUser.notifications,
+            phone: mappedUser.phone,
+            gender: mappedUser.gender,
+            dob: mappedUser.dob,
+            avatar: mappedUser.avatar
         }).then(({ error }) => {
             if (error) console.warn('Profile sync failed:', error.message);
         });
@@ -227,13 +251,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const signup = async (email: string, password?: string, name?: string) => {
+    const signup = async (email: string, password?: string, name?: string, metadata?: Partial<User>) => {
         setLoading(true);
         try {
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password: password || 'clinical123',
-                options: { data: { full_name: name, role: 'user' } }
+                options: { 
+                    data: { 
+                        full_name: name, 
+                        role: 'user',
+                        phone: metadata?.phone,
+                        gender: metadata?.gender,
+                        dob: metadata?.dob,
+                        avatar: metadata?.avatar || 'female'
+                    } 
+                }
             });
 
             if (error) {
@@ -244,7 +277,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     role: 'user',
                     date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
                     count: 0,
-                    status: 'Active'
+                    status: 'Active',
+                    ...metadata
                 };
                 setUsers(prev => [...prev, newUser]);
                 setUser(newUser);
@@ -272,12 +306,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
                 // Update Auth metadata
                 await supabase.auth.updateUser({
-                    data: { full_name: newData.name || user.name, bio: newData.bio || user.bio }
+                    data: { 
+                        full_name: newData.name || user.name, 
+                        bio: newData.bio || user.bio,
+                        notifications: newData.notifications || user.notifications,
+                        phone: newData.phone || user.phone,
+                        gender: newData.gender || user.gender,
+                        dob: newData.dob || user.dob,
+                        avatar: newData.avatar || user.avatar
+                    }
                 });
                 // Update Profiles table
                 await supabase.from('profiles').update({
                     name: newData.name || user.name,
-                    bio: newData.bio || user.bio
+                    bio: newData.bio || user.bio,
+                    notifications: newData.notifications || user.notifications,
+                    phone: newData.phone || user.phone,
+                    gender: newData.gender || user.gender,
+                    dob: newData.dob || user.dob,
+                    avatar: newData.avatar || user.avatar
                 }).eq('id', user.id);
             } catch (err) {
                 console.error('Persistence update failed:', err);
@@ -322,9 +369,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setActivities(prev => [newActivity, ...prev]);
 
         if (user && !user.id.startsWith('usr_')) {
-            await supabase.from('activities').insert({
+            await supabase.from('activity_logs').insert({
                 user_id: user.id,
-                type: activity.type,
+                action_type: activity.type,
                 title: activity.title,
                 description: activity.description,
                 icon: activity.icon

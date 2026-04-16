@@ -209,7 +209,7 @@ export function App() {
               {currentPage === 'dashboard/analysis' && <DashboardSkinAnalysis />}
               {currentPage === 'dashboard/history' && <DashboardHistory />}
               {currentPage === 'dashboard/profile' && <DashboardProfile />}
-              {currentPage === 'dashboard/settings' && <DashboardSettings />}
+              {currentPage === 'dashboard/settings' && <DashboardSettings onNavigate={navigate} />}
             </DashboardLayout>
           )}
 
