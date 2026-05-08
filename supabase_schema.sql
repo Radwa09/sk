@@ -9,6 +9,7 @@ create table if not exists public.profiles (
     email text,
     role text default 'user',
     bio text,
+    phone text,
     avatar_url text,
     last_sign_in_at timestamp with time zone,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
@@ -75,5 +76,50 @@ drop policy if exists "Admins can view all activities" on public.activities;
 create policy "Users can view own activities" on public.activities for select using (auth.uid() = user_id);
 create policy "Users can insert own activities" on public.activities for insert with check (auth.uid() = user_id);
 create policy "Admins can view all activities" on public.activities for select using (
+  (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+);
+
+-- Pharmacist policies for profiles
+create policy "Pharmacists can view all profiles" on public.profiles for select using (
+  (auth.jwt() -> 'user_metadata' ->> 'role') = 'pharmacist'
+);
+
+-- Pharmacist policies for analysis history
+create policy "Pharmacists can view all history" on public.analysis_history for select using (
+  (auth.jwt() -> 'user_metadata' ->> 'role') = 'pharmacist'
+);
+
+-- 4. CONSULTATIONS TABLE (Ask a Specialist)
+create table if not exists public.consultations (
+    id uuid default gen_random_uuid() primary key,
+    user_id uuid references auth.users on delete cascade not null,
+    pharmacist_id uuid references auth.users on delete cascade,
+    question text not null,
+    answer text,
+    status text default 'pending', -- 'pending' or 'answered'
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+    answered_at timestamp with time zone
+);
+
+alter table public.consultations enable row level security;
+
+-- Users can view their own consultations
+create policy "Users can view own consultations" on public.consultations for select using (auth.uid() = user_id);
+
+-- Users can insert their own consultations
+create policy "Users can insert own consultations" on public.consultations for insert with check (auth.uid() = user_id);
+
+-- Pharmacists can view all consultations
+create policy "Pharmacists can view all consultations" on public.consultations for select using (
+  (auth.jwt() -> 'user_metadata' ->> 'role') = 'pharmacist'
+);
+
+-- Pharmacists can update consultations (to answer them)
+create policy "Pharmacists can update consultations" on public.consultations for update using (
+  (auth.jwt() -> 'user_metadata' ->> 'role') = 'pharmacist'
+);
+
+-- Admins can view all consultations
+create policy "Admins can view all consultations" on public.consultations for select using (
   (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
 );

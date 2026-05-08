@@ -157,7 +157,7 @@ export function DashboardSettings({ onNavigate }: { onNavigate: (page: string) =
                                 <div className="space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div className="space-y-4">
-                                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Avatar Representation</p>
+                                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Gender</p>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <button
                                                     type="button"
@@ -188,15 +188,7 @@ export function DashboardSettings({ onNavigate }: { onNavigate: (page: string) =
                                             <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pl-2">Display Name</label>
                                             <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-6 py-4 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl text-sm focus:outline-none dark:text-stone-200" />
                                         </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pl-2">Gender</label>
-                                                <select value={gender} onChange={(e) => setGender(e.target.value as any)} className="w-full px-6 py-4 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl text-sm focus:outline-none dark:text-stone-200 appearance-none">
-                                                    <option value="female">Female</option>
-                                                    <option value="male">Male</option>
-                                                    <option value="other">Other</option>
-                                                </select>
-                                            </div>
+                                        <div className="grid grid-cols-1 gap-4">
                                             <div className="space-y-2">
                                                 <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest pl-2">Birth Date</label>
                                                 <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className="w-full px-6 py-4 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl text-sm focus:outline-none dark:text-stone-200" />

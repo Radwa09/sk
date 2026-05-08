@@ -21,7 +21,6 @@ export function AdminLayout({
     const menuItems = [
         { id: 'admin', label: 'System Overview', icon: <Database className="w-5 h-5" /> },
         { id: 'admin/users', label: 'User Directory', icon: <Users className="w-5 h-5" /> },
-        { id: 'admin/analytics', label: 'Global Analytics', icon: <BarChart3 className="w-5 h-5" /> },
     ];
 
     return (

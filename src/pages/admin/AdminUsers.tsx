@@ -48,7 +48,6 @@ export function AdminUsers() {
                             <tr className="bg-stone-50 dark:bg-stone-800/50 border-b border-stone-200 dark:border-stone-800">
                                 <th className="p-6 text-xs font-bold text-stone-400 uppercase tracking-widest pl-10">Client Identity</th>
                                 <th className="p-6 text-xs font-bold text-stone-400 uppercase tracking-widest">Network Entry Date</th>
-                                <th className="p-6 text-xs font-bold text-stone-400 uppercase tracking-widest">Last Active</th>
                                 <th className="p-6 text-xs font-bold text-stone-400 uppercase tracking-widest">Vault Detail (Pass)</th>
                                 <th className="p-6 text-xs font-bold text-stone-400 uppercase tracking-widest">Status / Designation</th>
                                 <th className="p-6 text-xs font-bold text-stone-400 uppercase tracking-widest text-right pr-10">Actions</th>
@@ -65,9 +64,6 @@ export function AdminUsers() {
                                     </td>
                                     <td className="p-6 text-sm text-stone-600 dark:text-stone-400">
                                         {user.date}
-                                    </td>
-                                    <td className="p-6 text-sm text-stone-600 dark:text-stone-400">
-                                        {user.lastActive || 'Never'}
                                     </td>
                                     <td className="p-6 text-lg text-stone-400 font-bold tracking-widest cursor-help" title="Securely Hashed by Supabase">
                                         ••••••••

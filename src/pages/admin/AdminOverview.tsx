@@ -44,51 +44,8 @@ export function AdminOverview() {
                     </div>
                 </motion.div>
 
-                <motion.div variants={itemVariants} className="p-8 rounded-[2rem] bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-sm relative overflow-hidden">
-                    <div className="relative z-10">
-                        <div className="w-12 h-12 bg-stone-50 dark:bg-stone-800 rounded-2xl flex items-center justify-center text-purple-500 mb-6 border border-stone-100 dark:border-stone-700">
-                            <FileImage className="w-6 h-6" />
-                        </div>
-                        <div className="text-sm font-bold text-stone-400 uppercase tracking-widest mb-1">Uploaded Bio-plates</div>
-                        <div className="text-4xl font-serif text-[#3B302B] dark:text-stone-100">1.2M</div>
-                        <div className="text-xs font-bold text-stone-400 mt-4">Storage load nominal</div>
-                    </div>
-                </motion.div>
+
             </div>
-
-            <motion.div variants={itemVariants} className="mt-8 p-10 rounded-[2.5rem] bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800">
-                <h3 className="text-xs font-bold tracking-[0.3em] uppercase text-stone-400 mb-8">System Status: Active Modules</h3>
-
-                <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-[#3B302B] dark:text-stone-300">Neural Network Core (Topography)</span>
-                        <div className="flex items-center gap-3">
-                            <div className="w-32 h-2 bg-stone-200 dark:bg-stone-800 rounded-full overflow-hidden">
-                                <div className="h-full bg-emerald-500 w-[95%]"></div>
-                            </div>
-                            <span className="text-xs text-stone-500 font-bold">95% Load</span>
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-[#3B302B] dark:text-stone-300">Diagnostic Accuracy Matrix</span>
-                        <div className="flex items-center gap-3">
-                            <div className="w-32 h-2 bg-stone-200 dark:bg-stone-800 rounded-full overflow-hidden">
-                                <div className="h-full bg-blue-500 w-[98%]"></div>
-                            </div>
-                            <span className="text-xs text-stone-500 font-bold">98.4% Accuracy</span>
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-[#3B302B] dark:text-stone-300">Biometric Sync APIs</span>
-                        <div className="flex items-center gap-3">
-                            <div className="w-32 h-2 bg-stone-200 dark:bg-stone-800 rounded-full overflow-hidden">
-                                <div className="h-full bg-amber-500 w-[72%]"></div>
-                            </div>
-                            <span className="text-xs text-stone-500 font-bold">72% Load</span>
-                        </div>
-                    </div>
-                </div>
-            </motion.div>
 
             <motion.div variants={itemVariants} className="p-8 rounded-[2.5rem] bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 shadow-sm">
                 <div className="flex items-center gap-4 mb-8">
@@ -102,9 +59,9 @@ export function AdminOverview() {
                         <div key={i} className="flex justify-between items-center py-4 border-b border-stone-100 dark:border-stone-800 last:border-0">
                             <div className="flex flex-col">
                                 <span className="text-sm font-bold text-[#3B302B] dark:text-stone-200">{activity.title}</span>
-                                <span className="text-xs text-stone-500">{activity.description}</span>
+                                <span className="text-xs text-stone-500 dark:text-stone-400">{activity.description}</span>
                             </div>
-                            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{activity.date}</span>
+                            <span className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest">{activity.date}</span>
                         </div>
                     ))}
                 </div>

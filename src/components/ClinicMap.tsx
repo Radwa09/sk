@@ -41,7 +41,7 @@ export function ClinicMap() {
   const iframeUrl = `https://maps.google.com/maps?q=${mapQuery}&t=&z=${mapZoom}&ie=UTF8&iwloc=&output=embed`;
 
   return (
-    <div className="relative aspect-[21/9] w-full rounded-[4rem] overflow-hidden border-[12px] border-white dark:border-stone-900 shadow-2xl bg-stone-100 dark:bg-stone-800 group z-10 flex flex-col">
+    <div className="relative aspect-[4/5] sm:aspect-[16/9] lg:aspect-[21/9] w-full rounded-[3rem] md:rounded-[4rem] overflow-hidden border-[8px] md:border-[12px] border-white dark:border-stone-900 shadow-2xl bg-stone-100 dark:bg-stone-800 group z-10 flex flex-col">
 
       <div className="flex-1 w-full relative">
         <iframe 

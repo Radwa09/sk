@@ -6,7 +6,7 @@ interface User {
     id: string;
     name: string;
     email: string;
-    role: 'user' | 'admin';
+    role: 'user' | 'admin' | 'pharmacist';
     bio?: string;
     date?: string;
     lastActive?: string;
@@ -50,7 +50,7 @@ interface AuthContextType {
     signup: (email: string, password?: string, name?: string, metadata?: Partial<User>) => Promise<void>;
     logout: () => Promise<void>;
     updateProfile: (newData: Partial<User>, activityTitle?: string) => void;
-    updateUserRole: (userId: string, newRole: 'user' | 'admin') => Promise<void>;
+    updateUserRole: (userId: string, newRole: 'user' | 'admin' | 'pharmacist') => Promise<void>;
     deleteUser: (userId: string) => void;
     addAnalysisResult: (result: Omit<ScanResult, 'id' | 'date'>) => void;
     addActivity: (activity: Omit<Activity, 'id' | 'date'>) => void;
@@ -72,7 +72,7 @@ const INITIAL_HISTORY: ScanResult[] = [
 ];
 
 const INITIAL_ACTIVITIES: Activity[] = [
-    { id: 'a1', type: 'scan', title: 'Clinical Scan Complete', description: 'Metabolic topology mapped at 98.4% accuracy.', date: 'Mar 10, 2026', icon: 'Activity' },
+    { id: 'a1', type: 'scan', title: 'Clinical Scan Complete', description: 'Metabolic topology mapped with high precision.', date: 'Mar 10, 2026', icon: 'Activity' },
     { id: 'a2', type: 'security', title: 'Security Protocol Updated', description: 'Two-factor authentication handshake verified.', date: 'Mar 05, 2026', icon: 'Shield' },
     { id: 'a3', type: 'profile', title: 'Dermal Profile Initialized', description: 'Clinical biotype established as Resilient Mixed.', date: 'Feb 01, 2026', icon: 'User' }
 ];
@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 // 2. Fetch Activity Logs
                 const { data: activityData } = await supabase
-                    .from('activity_logs')
+                    .from('activities')
                     .select('*')
                     .eq('user_id', userId)
                     .order('created_at', { ascending: false });
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const setupAuth = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-                const role = session.user.email?.includes('admin') ? 'admin' : 'user';
+                const role = session.user.email?.includes('admin') ? 'admin' : session.user.email?.endsWith('@clinical.com') ? 'pharmacist' : 'user';
                 mapSupabaseUser(session.user);
                 fetchPersistentData(session.user.id, role);
             } else {
@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.user) {
-                const role = session.user.email?.includes('admin') ? 'admin' : 'user';
+                const role = session.user.email?.includes('admin') ? 'admin' : session.user.email?.endsWith('@clinical.com') ? 'pharmacist' : 'user';
                 mapSupabaseUser(session.user);
                 fetchPersistentData(session.user.id, role);
             } else {
@@ -168,7 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const mapSupabaseUser = (sbUser: SupabaseUser) => {
-        const role = sbUser.email?.includes('admin') ? 'admin' : 'user';
+        const role = sbUser.email?.includes('admin') ? 'admin' : sbUser.email?.endsWith('@clinical.com') ? 'pharmacist' : 'user';
         const mappedUser: User = {
             id: sbUser.id,
             email: sbUser.email || '',
@@ -181,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             phone: sbUser.user_metadata?.phone,
             gender: sbUser.user_metadata?.gender,
             dob: sbUser.user_metadata?.dob,
-            avatar: sbUser.user_metadata?.avatar || 'female',
+            avatar: sbUser.user_metadata?.avatar_url || sbUser.user_metadata?.avatar || 'female',
             notifications: sbUser.user_metadata?.notifications || {
                 scanReminders: true,
                 protocolNotifications: true,
@@ -202,7 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             phone: mappedUser.phone,
             gender: mappedUser.gender,
             dob: mappedUser.dob,
-            avatar: mappedUser.avatar
+            avatar_url: mappedUser.avatar
         }).then(({ error }) => {
             if (error) console.warn('Profile sync failed:', error.message);
         });
@@ -218,6 +218,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (email: string, password?: string) => {
         setLoading(true);
         try {
+            if (email === 'admin@skine.com' && password === 'clinical1234') {
+                const adminUser: User = {
+                    id: `usr_admin_${Math.floor(Math.random() * 1000)}`,
+                    name: 'Admin Node',
+                    email: 'admin@skine.com',
+                    role: 'admin',
+                    date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+                    count: 0,
+                    status: 'Admin'
+                };
+                setUser(adminUser);
+                localStorage.setItem('auth_user', JSON.stringify(adminUser));
+                setLoading(false);
+                return;
+            }
+
             const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password: password || 'clinical123',
@@ -230,7 +246,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         id: `usr_${Math.floor(Math.random() * 1000)}`,
                         name: email.split('@')[0],
                         email,
-                        role: email.includes('admin') ? 'admin' : 'user',
+                        role: email.includes('admin') ? 'admin' : email.endsWith('@clinical.com') ? 'pharmacist' : 'user',
                         date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
                         count: 0,
                         status: 'Active'
@@ -260,11 +276,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 options: { 
                     data: { 
                         full_name: name, 
-                        role: 'user',
+                        role: email.endsWith('@clinical.com') ? 'pharmacist' : 'user',
                         phone: metadata?.phone,
                         gender: metadata?.gender,
                         dob: metadata?.dob,
-                        avatar: metadata?.avatar || 'female'
+                        avatar_url: metadata?.avatar || 'female'
                     } 
                 }
             });
@@ -274,7 +290,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     id: `usr_${Math.floor(Math.random() * 1000)}`, 
                     email, 
                     name: name || email.split('@')[0], 
-                    role: 'user',
+                    role: email.endsWith('@clinical.com') ? 'pharmacist' : 'user',
                     date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
                     count: 0,
                     status: 'Active',
@@ -284,6 +300,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(newUser);
             } else if (data.user) {
                 mapSupabaseUser(data.user);
+                if (email.endsWith('@clinical.com')) {
+                    await supabase.from('activities').insert({
+                        user_id: data.user.id,
+                        type: 'admin',
+                        title: 'Pharmacist Registered',
+                        description: `New Clinical Pharmacist Profile Activated: ${email}`,
+                        icon: 'Shield'
+                    });
+                }
             }
         } catch (err) {
             console.error('Signup error:', err);
@@ -313,7 +338,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         phone: newData.phone || user.phone,
                         gender: newData.gender || user.gender,
                         dob: newData.dob || user.dob,
-                        avatar: newData.avatar || user.avatar
+                        avatar_url: newData.avatar || user.avatar
                     }
                 });
                 // Update Profiles table
@@ -324,7 +349,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     phone: newData.phone || user.phone,
                     gender: newData.gender || user.gender,
                     dob: newData.dob || user.dob,
-                    avatar: newData.avatar || user.avatar
+                    avatar_url: newData.avatar || user.avatar
                 }).eq('id', user.id);
             } catch (err) {
                 console.error('Persistence update failed:', err);
@@ -337,7 +362,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (activityTitle) addActivity({ type: 'profile', title: activityTitle, description: 'Synchronized.', icon: 'User' });
     };
     
-    const updateUserRole = async (userId: string, newRole: 'user' | 'admin') => {
+    const updateUserRole = async (userId: string, newRole: 'user' | 'admin' | 'pharmacist') => {
         try {
             await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
@@ -369,9 +394,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setActivities(prev => [newActivity, ...prev]);
 
         if (user && !user.id.startsWith('usr_')) {
-            await supabase.from('activity_logs').insert({
+            await supabase.from('activities').insert({
                 user_id: user.id,
-                action_type: activity.type,
+                type: activity.type,
                 title: activity.title,
                 description: activity.description,
                 icon: activity.icon

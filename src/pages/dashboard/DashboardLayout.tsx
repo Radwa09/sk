@@ -18,10 +18,12 @@ export function DashboardLayout({
         onNavigate('home');
     };
 
-    const menuItems = [
+    const menuItems = user?.role === 'pharmacist' ? [
+        { id: 'pharmacist', label: 'Workspace', icon: <LayoutDashboard className="w-5 h-5" /> },
+        { id: 'pharmacist/profile', label: 'Clinical Profile', icon: <User className="w-5 h-5" /> },
+    ] : [
         { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
         { id: 'dashboard/analysis', label: 'Skin Analysis', icon: <Activity className="w-5 h-5" /> },
-        { id: 'dashboard/history', label: 'History', icon: <Clock className="w-5 h-5" /> },
         { id: 'dashboard/profile', label: 'Profile', icon: <User className="w-5 h-5" /> },
         { id: 'dashboard/settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
     ];

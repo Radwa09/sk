@@ -8,14 +8,16 @@ const itemVariants = {
     animate: { opacity: 1, y: 0, transition: { duration: 0.5 } }
 };
 
-export function DashboardProfile() {
+export function PharmacistProfile() {
     const { user, updateProfile } = useAuth();
     const [saved, setSaved] = useState(false);
     
     // Form states
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
-    const [profileImage, setProfileImage] = useState<string | undefined>(user?.avatar);
+    const [phone, setPhone] = useState(user?.phone || '');
+    const [bio, setBio] = useState(user?.bio || '');
+    const [profileImage, setProfileImage] = useState<string | undefined>((user as any)?.avatar);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,21 +33,25 @@ export function DashboardProfile() {
 
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
-        updateProfile({ name, email, avatar: profileImage } as any, 'Dermal Profile Updated');
+        updateProfile({ name, email, phone, bio, avatar: profileImage as any } as any, 'Pharmacist Profile Updated');
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
     };
+
+    if (user?.role !== 'pharmacist') {
+        return <div className="p-8 text-center bg-white dark:bg-stone-900 mx-auto max-w-xl mt-12 rounded-3xl shadow-sm">Unauthorized access. Pharmacists only.</div>;
+    }
 
     return (
         <motion.div
             initial="initial"
             animate="animate"
             exit={{ opacity: 0, y: -20 }}
-            className="space-y-8 max-w-3xl"
+            className="space-y-8 max-w-3xl mx-auto pb-24"
         >
-            <div className="mb-10">
-                <h2 className="text-4xl font-serif text-[#3B302B] dark:text-stone-100 mb-2">Personal <span className="text-[#8C7A6E] italic">Profile</span></h2>
-                <p className="text-stone-500 font-light">Manage your network identity and clinical preferences.</p>
+            <div className="mb-10 text-center">
+                <h2 className="text-4xl font-serif text-[#3B302B] dark:text-stone-100 mb-2">Pharmacist <span className="text-[#8C7A6E] italic">Profile</span></h2>
+                <p className="text-stone-500 font-light">Manage your clinical identity.</p>
             </div>
 
             <motion.div variants={itemVariants} className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-[2.5rem] p-10 shadow-sm">
@@ -54,10 +60,10 @@ export function DashboardProfile() {
                 <div className="flex items-center gap-8 mb-12 pb-10 border-b border-stone-100 dark:border-stone-800">
                     <div className="relative">
                         <div className="w-24 h-24 bg-stone-100 dark:bg-stone-800 rounded-3xl flex items-center justify-center text-4xl font-serif text-[#3B302B] dark:text-stone-300 shadow-inner overflow-hidden">
-                            {profileImage ? (
+                            {profileImage && profileImage.length > 10 ? (
                                 <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
-                                user?.name?.[0]?.toUpperCase() || 'U'
+                                user?.name?.[0]?.toUpperCase() || 'P'
                             )}
                         </div>
                         <input 
@@ -77,7 +83,7 @@ export function DashboardProfile() {
                     </div>
                     <div>
                         <h3 className="text-xl font-bold text-[#3B302B] dark:text-stone-200">{user?.name}</h3>
-                        <p className="text-sm text-stone-500 uppercase tracking-widest font-bold text-[10px] mt-1">{user?.role} Access Level</p>
+                        <p className="text-sm text-emerald-600 uppercase tracking-widest font-bold text-[10px] mt-1">Clinical Pharmacist</p>
                     </div>
                 </div>
 
@@ -94,22 +100,35 @@ export function DashboardProfile() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label htmlFor="email" className="text-xs font-bold text-stone-400 uppercase tracking-widest pl-2">Email Address</label>
+                            <label htmlFor="email" className="text-xs font-bold text-stone-400 uppercase tracking-widest pl-2">Gmail / Email</label>
                             <input
                                 type="email"
                                 id="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-6 py-4 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8C7A6E]/50 focus:border-[#8C7A6E] transition-all dark:text-stone-200 text-stone-400"
+                                disabled
+                                className="w-full px-6 py-4 bg-stone-100 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-2xl text-sm dark:text-stone-400 text-stone-400 cursor-not-allowed"
+                                title="Primary endpoint locked for clinical accounts."
                             />
                         </div>
                         <div className="space-y-2">
-                            <label htmlFor="password" className="text-xs font-bold text-stone-400 uppercase tracking-widest pl-2">Protocol Key (Password)</label>
+                            <label htmlFor="phone" className="text-xs font-bold text-stone-400 uppercase tracking-widest pl-2">Phone Number</label>
                             <input
-                                type="password"
-                                id="password"
-                                placeholder="Leave blank to keep current"
+                                type="tel"
+                                id="phone"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
                                 className="w-full px-6 py-4 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8C7A6E]/50 focus:border-[#8C7A6E] transition-all dark:text-stone-200"
+                            />
+                        </div>
+                        <div className="col-span-1 md:col-span-2 space-y-2">
+                            <label htmlFor="bio" className="text-xs font-bold text-stone-400 uppercase tracking-widest pl-2">Bio</label>
+                            <textarea
+                                id="bio"
+                                value={bio}
+                                onChange={(e) => setBio(e.target.value)}
+                                rows={3}
+                                className="w-full px-6 py-4 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8C7A6E]/50 focus:border-[#8C7A6E] transition-all dark:text-stone-200 resize-none"
                             />
                         </div>
                     </div>

@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from './context/AuthContext';
+import stethoscope from './assets/stethoscope.svg';
+import scanUI from './assets/scan_ui.svg';
+
+// Pharmacy Logos (Please Ensure these files are placed in src/assets/)
+// import attarLogo from './assets/attar.jpg';
+// import kobtanLogo from './assets/kobtan.jpg';
+// Note: For now we'll just use the src paths as strings to avoid compile errors if they don't exist yet.
 import { Login } from './pages/auth/Login';
 import { Signup } from './pages/auth/Signup';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
@@ -11,11 +18,14 @@ import { DashboardSkinAnalysis } from './pages/dashboard/SkinAnalysis';
 import { DashboardProfile } from './pages/dashboard/Profile';
 import { DashboardSettings } from './pages/dashboard/Settings';
 import { FaceCapture } from './components/FaceCapture';
+import { ProductScanner } from './components/ProductScanner';
 import { ClinicMap } from './components/ClinicMap';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminOverview } from './pages/admin/AdminOverview';
 import { AdminUsers } from './pages/admin/AdminUsers';
 import { AdminAnalytics } from './pages/admin/AdminAnalytics';
+import { PharmacistDashboard } from './pages/pharmacist/PharmacistDashboard';
+import { PharmacistProfile } from './pages/pharmacist/PharmacistProfile';
 import {
   Camera,
   Sparkles,
@@ -42,7 +52,9 @@ import {
   Headphones,
   Stethoscope,
   Fingerprint,
-  Heart
+  Heart,
+  Menu,
+  X
 } from 'lucide-react';
 
 import auroraSerum from './assets/aurora_serum.png';
@@ -58,9 +70,10 @@ const pageVariants = {
 
 
 export function App() {
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin, user } = useAuth();
   const [currentPage, setCurrentPage] = useState('home');
   const [showConsultModal, setShowConsultModal] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('morning');
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -77,7 +90,7 @@ export function App() {
   // Basic Routing Logic
   useEffect(() => {
     const path = window.location.pathname.replace('/', '').toLowerCase();
-    const validPages = ['home', 'dashboard', 'dashboard/analysis', 'dashboard/history', 'dashboard/profile', 'dashboard/settings', 'admin', 'admin/users', 'admin/analytics', 'login', 'signup', 'forgot-password', 'ai', 'scan', 'routine', 'clinic', 'biometrics', 'technology', 'recommendations', 'support', 'results'];
+    const validPages = ['home', 'dashboard', 'dashboard/analysis', 'dashboard/profile', 'dashboard/settings', 'pharmacist', 'pharmacist/profile', 'admin', 'admin/users', 'login', 'signup', 'forgot-password', 'ai', 'scan', 'scanner', 'routine', 'clinic', 'recommendations', 'support', 'results'];
     if (path && validPages.includes(path)) {
       setCurrentPage(path);
     }
@@ -96,6 +109,7 @@ export function App() {
   const navigate = (page: string) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setCurrentPage(page);
+    setIsMenuOpen(false);
   };
 
 
@@ -143,8 +157,8 @@ export function App() {
             </div>
 
             <div className="hidden lg:flex items-center gap-1 bg-stone-100/50 dark:bg-stone-900/50 p-1.5 rounded-full border border-stone-200/50 dark:border-stone-800/50">
-              {['Home', isAuthenticated ? (isAdmin ? 'Admin' : 'Dashboard') : 'Login', 'Skin Analysis', 'AI', 'Routine', 'Clinic'].map((item) => {
-                const pageId = item === 'Skin Analysis' ? 'scan' : item === 'Login' ? 'login' : item.toLowerCase();
+              {['Home', !isAuthenticated ? 'Login' : (isAdmin ? 'Admin' : (user?.role === 'pharmacist' ? 'Pharmacist Workspace' : 'Dashboard')), 'Skin Analysis', 'AI', 'Scanner', 'Routine', 'Clinic'].map((item) => {
+                const pageId = item === 'Skin Analysis' ? 'scan' : item === 'Login' ? 'login' : item === 'Pharmacist Workspace' ? 'pharmacist' : item.toLowerCase();
                 const isActive = currentPage === pageId || (currentPage === 'results' && pageId === 'scan');
                 return (
                   <button
@@ -186,13 +200,84 @@ export function App() {
                 Analyze Now
               </button>
 
-              <button className="lg:hidden p-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-sm text-stone-600 dark:text-stone-400">
-                <Activity className="w-5 h-5" />
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="lg:hidden p-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl shadow-sm text-stone-600 dark:text-stone-400"
+              >
+                {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
           </div>
         </div>
       </nav>
+      
+      {/* MOBILE MENU DRAWER */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMenuOpen(false)}
+              className="fixed inset-0 bg-[#3B302B]/40 backdrop-blur-sm z-[60] lg:hidden"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 bottom-0 w-[80%] max-w-sm bg-white dark:bg-[#0F0D0C] z-[70] shadow-2xl lg:hidden flex flex-col p-8 border-l border-stone-100 dark:border-stone-800"
+            >
+              <div className="flex justify-between items-center mb-12">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[#4A3C31] rounded-xl flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-stone-100" />
+                  </div>
+                  <span className="text-2xl font-serif font-bold text-[#3B302B] dark:text-stone-100">skinE</span>
+                </div>
+                <button 
+                  onClick={() => setIsMenuOpen(false)}
+                  className="p-2 rounded-full hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                >
+                  <X className="w-6 h-6 text-stone-400" />
+                </button>
+              </div>
+
+              <nav className="flex flex-col gap-2">
+                {['Home', !isAuthenticated ? 'Login' : (isAdmin ? 'Admin' : (user?.role === 'pharmacist' ? 'Pharmacist Workspace' : 'Dashboard')), 'Skin Analysis', 'AI', 'Scanner', 'Routine', 'Clinic', 'Support'].map((item) => {
+                  const pageId = item === 'Skin Analysis' ? 'scan' : item === 'Login' ? 'login' : item === 'Pharmacist Workspace' ? 'pharmacist' : item.toLowerCase();
+                  const isActive = currentPage === pageId || (currentPage === 'results' && pageId === 'scan');
+                  return (
+                    <button
+                      key={pageId}
+                      onClick={() => navigate(pageId)}
+                      className={`flex items-center justify-between px-6 py-4 rounded-2xl font-medium text-lg transition-all ${
+                        isActive 
+                        ? 'bg-[#4A3C31] text-white shadow-lg shadow-[#4A3C31]/20' 
+                        : 'text-stone-500 hover:text-[#3B302B] dark:text-stone-400 dark:hover:text-stone-200'
+                      }`}
+                    >
+                      <span>{item}</span>
+                      <ChevronRight className={`w-5 h-5 transition-transform ${isActive ? 'translate-x-1' : 'opacity-0'}`} />
+                    </button>
+                  );
+                })}
+              </nav>
+
+              <div className="mt-auto">
+                <button
+                  onClick={() => navigate('scan')}
+                  className="w-full flex items-center justify-center gap-3 bg-[#4A3C31] text-white py-5 rounded-3xl font-bold shadow-xl shadow-[#4A3C31]/20"
+                >
+                  <Camera className="w-5 h-5" /> Analyze Now
+                </button>
+                <p className="text-center text-[10px] text-stone-400 uppercase tracking-widest mt-8 font-medium">Clinical Elite v1.2</p>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <main className="max-w-7xl mx-auto px-6 lg:px-12 py-16 relative z-10">
         <AnimatePresence mode="wait">
@@ -207,9 +292,16 @@ export function App() {
             <DashboardLayout key="dashboard-layout" currentPath={currentPage} onNavigate={navigate}>
               {currentPage === 'dashboard' && <DashboardOverview onNavigate={navigate} />}
               {currentPage === 'dashboard/analysis' && <DashboardSkinAnalysis />}
-              {currentPage === 'dashboard/history' && <DashboardHistory />}
               {currentPage === 'dashboard/profile' && <DashboardProfile />}
               {currentPage === 'dashboard/settings' && <DashboardSettings onNavigate={navigate} />}
+            </DashboardLayout>
+          )}
+
+          {/* ================= PHARMACIST PAGES ================= */}
+          {currentPage.startsWith('pharmacist') && (
+            <DashboardLayout key="pharmacist-layout" currentPath={currentPage} onNavigate={navigate}>
+              {currentPage === 'pharmacist' && <PharmacistDashboard />}
+              {currentPage === 'pharmacist/profile' && <PharmacistProfile />}
             </DashboardLayout>
           )}
 
@@ -218,23 +310,19 @@ export function App() {
             <AdminLayout key="admin-layout" currentPath={currentPage} onNavigate={navigate}>
               {currentPage === 'admin' && <AdminOverview />}
               {currentPage === 'admin/users' && <AdminUsers />}
-              {currentPage === 'admin/analytics' && <AdminAnalytics />}
             </AdminLayout>
           )}
 
           {/* ================= HOME PAGE ================= */}
           {currentPage === 'home' && (
-            <motion.div key="home" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="space-y-40">
+            <motion.div key="home" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="space-y-24 md:space-y-40">
               {/* Hero Section */}
               <section className="relative pt-12 text-center md:text-left">
                 <div className="grid lg:grid-cols-2 gap-20 items-center">
                   <div className="space-y-12">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-stone-100 border border-stone-200 text-stone-500 font-semibold text-[10px] tracking-[0.2em] uppercase shadow-sm">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Powered by Advanced AI Vision
-                    </div>
 
-                    <h1 className="text-6xl md:text-8xl font-serif text-[#3B302B] dark:text-stone-100 leading-[0.95] tracking-tight">
+
+                    <h1 className="text-4xl sm:text-6xl md:text-8xl font-serif text-[#3B302B] dark:text-stone-100 leading-[0.95] tracking-tight">
                       Elevate Your <br />
                       <span className="text-[#8C7A6E] dark:text-[#C2B29F] italic font-light">Dermal Profile.</span>
                     </h1>
@@ -262,16 +350,7 @@ export function App() {
                       </button>
                     </div>
 
-                    <div className="pt-8 flex items-center gap-12 border-t border-stone-200 dark:border-stone-800">
-                      <div>
-                        <div className="text-3xl font-serif text-[#3B302B] dark:text-stone-100">12M+</div>
-                        <div className="text-xs text-stone-400 dark:text-stone-600 font-medium uppercase tracking-widest mt-1">Data Points</div>
-                      </div>
-                      <div>
-                        <div className="text-3xl font-serif text-[#3B302B] dark:text-stone-100">98.4%</div>
-                        <div className="text-xs text-stone-400 dark:text-stone-600 font-medium uppercase tracking-widest mt-1">Accuracy</div>
-                      </div>
-                    </div>
+
                   </div>
 
                   <div className="relative px-8"
@@ -301,12 +380,11 @@ export function App() {
 
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {[
-                    { icon: <Camera className="w-7 h-7" />, title: "Scan", page: "scan", desc: "AI-powered dermal topology analysis. Our neural network maps moisture density, texture, and structural elasticity with clinical precision.", color: "from-emerald-500/10 to-emerald-500/5" },
+                    { icon: <Camera className="w-7 h-7" />, title: "Scan", page: "scan", desc: "AI-powered dermal topology analysis. Our neural network maps moisture density, texture, and structural elasticity with clinical precision.", color: "from-emerald-500/10 to-emerald-500/5", prominent: true },
+                    { icon: <ShoppingBag className="w-7 h-7" />, title: "Scanner", page: "scanner", desc: "Clinical barcode recognition engine. Scan pharmaceutical products for instant chemical synthesis analysis.", color: "from-amber-500/10 to-amber-500/5" },
                     { icon: <Sparkles className="w-7 h-7" />, title: "AI", page: "ai", desc: "Engineering revolutionary generative dermal models for predictive visualization and clinical synthesis.", color: "from-indigo-500/10 to-indigo-500/5", isNewTab: true },
                     { icon: <Droplet className="w-7 h-7" />, title: "Routine", page: "routine", desc: "Personalized AM/PM skincare protocols with scientifically curated active compounds tailored to your unique biotype.", color: "from-blue-500/10 to-blue-500/5" },
                     { icon: <Stethoscope className="w-7 h-7" />, title: "Clinic", page: "clinic", desc: "Access our global network of certified partner clinics and compounding labs for professional dermal consultations.", color: "from-violet-500/10 to-violet-500/5" },
-                    { icon: <Fingerprint className="w-7 h-7" />, title: "Biometrics", page: "biometrics", desc: "Real-time synchronization of your skin metrics with our clinical cloud for adaptive formulation and tracking.", color: "from-amber-500/10 to-amber-500/5" },
-                    { icon: <Cpu className="w-7 h-7" />, title: "Technology", page: "technology", desc: "Hyper-spectral neural networks identifying subcutaneous biomarkers often invisible to the human eye.", color: "from-rose-500/10 to-rose-500/5" },
                     { icon: <Headphones className="w-7 h-7" />, title: "Support", page: "support", desc: "Our clinical support team of licensed professionals is available 24/7 for order tracking, tech support, and protocol guidance.", color: "from-teal-500/10 to-teal-500/5" }
                   ].map((service, i) => (
                     <div key={i}
@@ -317,7 +395,11 @@ export function App() {
                           navigate(service.page);
                         }
                       }}
-                      className="relative p-10 rounded-[2.5rem] bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.05)] dark:shadow-none hover:shadow-[0_40px_80px_-40px_rgba(0,0,0,0.12)] dark:hover:bg-stone-800/50 transition-all cursor-pointer group overflow-hidden"
+                      className={`relative p-10 rounded-[2.5rem] bg-white dark:bg-stone-900 border shadow-[0_20px_50px_-20px_rgba(0,0,0,0.05)] dark:shadow-none hover:shadow-[0_40px_80px_-40px_rgba(0,0,0,0.12)] dark:hover:bg-stone-800/50 transition-all cursor-pointer group overflow-hidden ${
+                        (service as any).prominent 
+                        ? 'border-stone-300 dark:border-stone-700 shadow-lg shadow-stone-900/5' 
+                        : 'border-stone-100 dark:border-stone-800'
+                      }`}
                     >
                       {/* Gradient background glow */}
                       <div className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
@@ -503,47 +585,66 @@ export function App() {
                 </div>
               </div>
 
-              {/* Protocol Grid */}
-              <div className="grid lg:grid-cols-3 gap-12">
-                {(activeTab === 'morning' ? [
-                  { step: "01", type: "Equilibrium", name: "Amino-Acid Cleansing Milk", desc: "A pH-balanced lipid-restoring milk that purifies without disrupting the acid mantle.", data: "Ceramides 3, 6-II, Phyto-Sphingosine", price: "$32" },
-                  { step: "02", type: "Correction", name: "Mandelic & PHA Complex", desc: "Gentle exfoliation for sensitive profiles to clear congestion and refine dermal texture.", data: "10% Mandelic Acid + 2% Gluconolactone", price: "$58" },
-                  { step: "03", type: "Protection", name: "Squalane & Peptides Infusion", desc: "Highly concentrated hydration with signal peptides to stimulate collagen synthesis.", data: "Bio-Identical Squalane + Hexapeptide-8", price: "$64" }
-                ] : [
-                  { step: "01", type: "Purification", name: "Lipid-Soluble Pre-Cleanse", desc: "Dissolves SPF and environmental pollutants without compromising the epidermal barrier.", data: "Safflower Seed Oil + Vitamin E", price: "$38" },
-                  { step: "02", type: "Resurfacing", name: "Clinical Retinoid 0.5%", desc: "Encapsulated retinaldehyde for accelerated cellular turnover and collagen synthesis.", data: "0.5% Retinaldehyde + Niacinamide", price: "$85" },
-                  { step: "03", type: "Recovery", name: "Ceramide Barrier Balm", desc: "Intensive overnight repair to seal in actives and prevent transepidermal water loss.", data: "5% Panthenol + Cholesterol", price: "$72" }
-                ]).map((item, i) => (
-                  <div key={i}
-                    className="group bg-white border border-stone-100 p-10 rounded-[3rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.03)] hover:shadow-[0_40px_100px_-20px_rgba(74,60,49,0.1)] transition-all"
-                  >
-                    <div className="flex justify-between items-start mb-12">
-                      <div className="text-[10px] font-bold text-stone-300 tracking-[0.3em] uppercase">Step {item.step}</div>
-                      <div className="w-10 h-10 rounded-2xl bg-stone-50 text-[#8C7A6E] flex items-center justify-center border border-stone-100 group-hover:bg-[#4A3C31] group-hover:text-white transition-all">
-                        <Droplet className="w-4 h-4" />
+              <div className="max-w-4xl mx-auto">
+                <div className="bg-white border border-stone-100 p-8 md:p-12 rounded-[3.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.03)] relative overflow-hidden">
+                  <div className="space-y-6 relative z-10">
+                    {(activeTab === 'morning' ? [
+                      { step: "01", type: "Equilibrium", name: "Amino-Acid Cleansing Milk", desc: "A pH-balanced lipid-restoring milk that purifies without disrupting the acid mantle.", data: "Ceramides 3, 6-II, Phyto-Sphingosine", price: 32, Icon: Droplet },
+                      { step: "02", type: "Correction", name: "Mandelic & PHA Complex", desc: "Gentle exfoliation for sensitive profiles to clear congestion and refine dermal texture.", data: "10% Mandelic Acid + 2% Gluconolactone", price: 58, Icon: Activity },
+                      { step: "03", type: "Protection", name: "Squalane & Peptides Infusion", desc: "Highly concentrated hydration with signal peptides to stimulate collagen synthesis.", data: "Bio-Identical Squalane + Hexapeptide-8", price: 64, Icon: ShieldCheck }
+                    ] : [
+                      { step: "01", type: "Purification", name: "Lipid-Soluble Pre-Cleanse", desc: "Dissolves SPF and environmental pollutants without compromising the epidermal barrier.", data: "Safflower Seed Oil + Vitamin E", price: 38, Icon: Droplet },
+                      { step: "02", type: "Resurfacing", name: "Clinical Retinoid 0.5%", desc: "Encapsulated retinaldehyde for accelerated cellular turnover and collagen synthesis.", data: "0.5% Retinaldehyde + Niacinamide", price: 85, Icon: Activity },
+                      { step: "03", type: "Recovery", name: "Ceramide Barrier Balm", desc: "Intensive overnight repair to seal in actives and prevent transepidermal water loss.", data: "5% Panthenol + Cholesterol", price: 72, Icon: ShieldCheck }
+                    ]).map((item, i) => {
+                      const IconComponent = item.Icon;
+                      return (
+                        <div key={i} className="group flex flex-col md:flex-row gap-8 items-start md:items-center p-8 rounded-[2rem] bg-stone-50 border border-stone-100/50 hover:bg-[#4A3C31] hover:text-white transition-all duration-300">
+                           <div className="shrink-0 w-16 h-16 rounded-2xl bg-white text-[#4A3C31] flex items-center justify-center border border-stone-100 shadow-sm group-hover:border-[#4A3C31]">
+                             <IconComponent className="w-6 h-6" />
+                           </div>
+                           <div className="flex-1">
+                             <div className="flex items-center gap-3 mb-2">
+                               <span className="text-[10px] font-bold text-stone-400 group-hover:text-stone-300 tracking-[0.2em] uppercase">Step {item.step}</span>
+                               <span className="px-2 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[9px] font-bold tracking-widest uppercase group-hover:bg-emerald-500/20 group-hover:text-emerald-300">{item.type}</span>
+                             </div>
+                             <h3 className="text-xl font-serif text-[#3B302B] group-hover:text-white mb-2">{item.name}</h3>
+                             <p className="text-stone-500 group-hover:text-stone-300 font-light text-sm leading-relaxed mb-4">{item.desc}</p>
+                             <div className="inline-block bg-stone-100 group-hover:bg-stone-800/50 px-3 py-1.5 rounded-lg border border-transparent group-hover:border-stone-700">
+                               <span className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mr-2">Components</span>
+                               <span className="text-[10px] text-[#4A3C31] group-hover:text-stone-100 font-medium">{item.data}</span>
+                             </div>
+                           </div>
+                           <div className="shrink-0 text-right md:text-center w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-stone-200 group-hover:border-stone-700">
+                             <div className="text-2xl font-serif font-bold text-[#3B302B] group-hover:text-white">${item.price}</div>
+                           </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  <div className="mt-12 pt-8 border-t border-stone-100 flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
+                    <div>
+                      <div className="text-[10px] font-bold text-stone-400 tracking-widest uppercase mb-1">Total Regimen Integration</div>
+                      <div className="text-4xl font-serif text-[#3B302B] font-bold">
+                        ${activeTab === 'morning' ? 32 + 58 + 64 : 38 + 85 + 72}.00
                       </div>
                     </div>
-
-                    <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4">{item.type}</h4>
-                    <h3 className="text-2xl font-serif text-[#3B302B] mb-6 leading-snug">{item.name}</h3>
-                    <p className="text-stone-500 font-light text-sm leading-relaxed mb-8">{item.desc}</p>
-
-                    <div className="bg-stone-50 p-6 rounded-2xl border border-stone-100/50 mb-10">
-                      <div className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2">Active Components</div>
-                      <p className="text-[11px] text-[#4A3C31] font-medium leading-relaxed">{item.data}</p>
-                    </div>
-
-                    <div className="flex justify-between items-center pt-8 border-t border-stone-50 transition-all dark:border-stone-800">
-                      <span className="text-xl font-serif font-bold text-[#3B302B] dark:text-stone-200">{item.price}</span>
-                      <button className="flex items-center gap-3 text-xs font-bold text-[#4A3C31] dark:text-stone-400 hover:text-[#8C7A6E] dark:hover:text-stone-300 transition-colors p-2 -mr-2">
-                        Add to Regimen <ShoppingBag className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <button className="w-full md:w-auto px-10 py-5 bg-[#4A3C31] hover:bg-[#3B302B] text-white rounded-full font-bold text-sm transition-all shadow-xl shadow-[#4A3C31]/20 flex items-center justify-center gap-4 group">
+                      Add Full Regimen <ShoppingBag className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    </button>
                   </div>
-                ))}
+                </div>
               </div>
 
-              {/* Fulfillment Section */}
+
+            </motion.div>
+          )}
+
+          {/* ================= CLINIC & MAP PAGE ================= */}
+          {currentPage === 'clinic' && (
+            <motion.div key="clinic" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="space-y-32">
+              {/* Fulfillment Section (Moved from Routine) */}
               <div className="pt-24 border-t border-stone-200 grid lg:grid-cols-2 gap-24 items-center">
                 <div className="space-y-10">
                   <h3 className="text-4xl font-serif text-[#3B302B]">Scientific <br /> <span className="text-[#8C7A6E] italic">Fulfillment Network</span></h3>
@@ -552,24 +653,41 @@ export function App() {
                   </p>
                   <div className="space-y-6">
                     {[
-                      { name: "Elite Dermal Pharmacy", rating: "5.0", dist: "0.8 km", status: "Certified Partner" },
-                      { name: "Clinical Care Center", rating: "4.8", dist: "2.5 km", status: "Priority Lab" }
+                      { 
+                        name: "Mahmoud Al-Attar Pharmacy", 
+                        rating: "5.0", dist: "0.8 km", status: "Certified Partner",
+                        actionHref: "https://wa.me/201282997923", actionText: "WhatsApp: +20 12 82997923",
+                        logo: "/mahmoud.jpg"
+                      },
+                      { 
+                        name: "alkobtan", 
+                        rating: "4.8", dist: "2.5 km", status: "Priority Lab",
+                        actionHref: "tel:5923332-03", actionText: "Call: 5923332-03",
+                        logo: "/alkobtan.jpg"
+                      }
                     ].map((p, i) => (
-                      <div key={i} className="flex justify-between items-center p-8 rounded-[2rem] bg-stone-50 border border-stone-200/50 hover:bg-white hover:shadow-xl hover:shadow-stone-900/5 transition-all group">
-                        <div className="flex items-center gap-6">
-                          <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-[#4A3C31] shadow-sm group-hover:bg-[#4A3C31] group-hover:text-white transition-all">
-                            <MapPin className="w-6 h-6" />
+                      <a key={i} href={p.actionHref} target={p.actionHref.startsWith('http') ? '_blank' : '_self'} rel="noopener noreferrer" className="block">
+                        <div className="flex justify-between items-center p-8 rounded-[2rem] bg-stone-50 border border-stone-200/50 hover:bg-white hover:shadow-xl hover:shadow-stone-900/5 transition-all group">
+                          <div className="flex items-center gap-6">
+                            <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-[#4A3C31] shadow-sm overflow-hidden group-hover:bg-white transition-all">
+                              {p.logo ? (
+                                <img src={p.logo} alt={p.name} className="w-full h-full object-cover p-2" />
+                              ) : (
+                                <MapPin className="w-6 h-6 group-hover:text-white transition-all" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-bold text-[#3B302B] mb-1">{p.name}</div>
+                              <div className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">{p.status} • {p.dist}</div>
+                              <div className="text-[11px] font-bold text-[#8C7A6E] mt-2 group-hover:text-[#4A3C31] transition-colors">{p.actionText}</div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="font-bold text-[#3B302B] mb-1">{p.name}</div>
-                            <div className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">{p.status} • {p.dist}</div>
+                          <div className="text-right">
+                            <div className="text-sm font-bold text-[#4A3C31]">{p.rating}</div>
+                            <div className="text-[10px] text-stone-300 font-bold uppercase tracking-widest mt-1">Rating</div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-[#4A3C31]">{p.rating}</div>
-                          <div className="text-[10px] text-stone-300 font-bold uppercase tracking-widest mt-1">Rating</div>
-                        </div>
-                      </div>
+                      </a>
                     ))}
                   </div>
                 </div>
@@ -586,25 +704,7 @@ export function App() {
                       <MessageSquare className="w-5 h-5" /> Book Dermal Consultation
                     </button>
                   </div>
-
                 </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ================= CLINIC & MAP PAGE ================= */}
-          {currentPage === 'clinic' && (
-            <motion.div key="clinic" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="space-y-32">
-              <div className="text-center space-y-8 max-w-3xl mx-auto">
-                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-stone-100 border border-stone-200 text-stone-400 text-[10px] font-bold tracking-widest uppercase">
-                  Global Dermal Network
-                </div>
-                <h2 className="text-5xl md:text-7xl font-serif text-[#3B302B] leading-[1.1]">
-                  Clinical <span className="text-[#8C7A6E] italic">Topology Map</span>
-                </h2>
-                <p className="text-xl text-stone-500 font-light leading-relaxed">
-                  Locate certified skinE partner clinics and compounding labs within our encrypted clinical network.
-                </p>
               </div>
 
               {/* Interactive Map Wrapper */}
@@ -621,9 +721,8 @@ export function App() {
 
                 <div className="grid md:grid-cols-3 gap-8">
                   {[
-                    { name: 'Dr. Sarah Jenkins', specialization: 'Dermatology', number: '+1 (555) 019-2837', availability: 'Available Today' },
-                    { name: 'Dr. Michael Chen', specialization: 'Dermatology', number: '+1 (555) 019-8842', availability: 'Next Week' },
-                    { name: 'Dr. Elena Weiss', specialization: 'Dermatology', number: '+1 (555) 019-7711', availability: 'Available Tomorrow' }
+                    { name: 'Dr. Rahma Ahmed', specialization: 'Dermatology', number: '+20 12 24176366', availability: 'Available Today' },
+                    { name: 'Dr. Shahd Zaitoon', specialization: 'Dermatology', number: '+20 11 55188190', availability: 'Available Tomorrow' }
                   ].map((doc, i) => (
                     <div key={i}
                       className="p-8 rounded-[2.5rem] bg-white border border-stone-100 shadow-sm space-y-8 hover:shadow-xl transition-all"
@@ -640,10 +739,10 @@ export function App() {
                       </div>
                       <div className="pt-4 border-t border-stone-50 flex flex-col gap-2">
                         <div className="text-[10px] font-bold uppercase tracking-widest text-[#8C7A6E]">Contact Number</div>
-                        <div className="text-[#4A3C31] font-medium flex items-center gap-2">
+                        <a href={`tel:${doc.number.replace(/\s+/g, '')}`} className="text-[#4A3C31] font-medium flex items-center gap-2 hover:text-[#8C7A6E] transition-colors">
                           <Phone className="w-4 h-4 text-stone-400" />
                           {doc.number}
-                        </div>
+                        </a>
                       </div>
                       <div className="pt-4 pb-2">
                         <button className="w-full py-3 bg-stone-50 hover:bg-stone-100 text-[#4A3C31] rounded-2xl text-xs font-bold transition-all border border-stone-200">
@@ -657,113 +756,7 @@ export function App() {
             </motion.div>
           )}
 
-          {/* ================= BIOMETRICS PAGE ================= */}
-          {currentPage === 'biometrics' && (
-            <motion.div key="biometrics" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="space-y-32">
-              <div className="text-center space-y-8 max-w-3xl mx-auto">
-                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-stone-100 border border-stone-200 text-stone-400 text-[10px] font-bold tracking-widest uppercase">
-                  Dermal Intelligence
-                </div>
-                <h2 className="text-5xl md:text-7xl font-serif text-[#3B302B] leading-[1.1]">
-                  Advanced <span className="text-[#8C7A6E] italic">Biometrics</span>
-                </h2>
-                <p className="text-xl text-stone-500 font-light leading-relaxed">
-                  Real-time synchronization of your skin metrics with our clinical cloud for adaptive formulation logic.
-                </p>
-              </div>
 
-              <div className="grid lg:grid-cols-2 gap-16">
-                {/* Real-time Graph Visual (Conceptual) */}
-                <div className="p-12 rounded-[3.5rem] bg-[#3B302B] text-white space-y-10 relative overflow-hidden">
-
-                  <div className="flex justify-between items-start relative z-10">
-                    <div>
-                      <h3 className="text-3xl font-serif mb-2">Metric <span className="text-stone-400">Velocity</span></h3>
-                      <p className="text-stone-400 text-xs uppercase tracking-widest">Active Tracking • Sector 7</p>
-                    </div>
-                    <div className="p-4 bg-white/10 rounded-2xl border border-white/10 text-emerald-400 font-bold text-sm">
-                      LIVE +0.8%
-                    </div>
-                  </div>
-
-                  {/* Simulated Graph Lines */}
-                  <div className="h-64 flex items-end gap-1 relative z-10">
-                    {[40, 60, 45, 80, 55, 90, 75, 40, 60, 45, 80, 55, 90, 75].map((h, i) => (
-                      <div key={i}
-                        style={{ height: `${h}%` }}
-                        className="flex-1 bg-gradient-to-t from-emerald-500/20 to-emerald-400 rounded-t-sm transition-all duration-700"
-                      />
-                    ))}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6 relative z-10 font-bold">
-                    <div className="p-6 bg-white/5 rounded-3xl border border-white/5">
-                      <div className="text-[10px] text-stone-400 uppercase tracking-widest mb-1">Moisture Res.</div>
-                      <div className="text-2xl text-emerald-400">88.4</div>
-                    </div>
-                    <div className="p-6 bg-white/5 rounded-3xl border border-white/5">
-                      <div className="text-[10px] text-stone-400 uppercase tracking-widest mb-1">Lipid Integrity</div>
-                      <div className="text-2xl text-stone-200">92.1</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Metric breakdown */}
-                <div className="space-y-12">
-                  {[
-                    { label: 'Cellular Turnover', value: '14.2 Days', trend: 'Optimizing', desc: 'Normalized rate detected across epidermal layers.' },
-                    { label: 'Sebum Equilibrium', value: 'Balanced', trend: 'Stable', desc: 'Secretions aligned with environmental moisture signals.' },
-                    { label: 'Barrier Resilience', value: 'High', trend: 'Reinforced', desc: 'No micro-tears detected in current analysis cycle.' }
-                  ].map((m, i) => (
-                    <div key={i}
-                      className="p-8 rounded-[2.5rem] bg-white border border-stone-100 space-y-4 hover:shadow-xl hover:shadow-stone-900/5 transition-all cursor-default"
-                    >
-                      <div className="flex justify-between items-center text-sm font-bold uppercase tracking-widest">
-                        <span className="text-[#3B302B]">{m.label}</span>
-                        <span className="text-emerald-600">{m.trend}</span>
-                      </div>
-                      <div className="text-2xl font-serif text-[#8C7A6E]">{m.value}</div>
-                      <p className="text-stone-400 text-sm font-light leading-relaxed">{m.desc}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ================= TECH PAGE ================= */}
-          {currentPage === 'technology' && (
-            <motion.div key="tech" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="max-w-5xl mx-auto space-y-32 py-12">
-              <div className="text-center space-y-8 max-w-3xl mx-auto">
-                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-stone-100 border border-stone-200 text-stone-400 text-[10px] font-bold tracking-widest uppercase">
-                  Technical Whitepaper Summary
-                </div>
-                <h2 className="text-5xl md:text-7xl font-serif text-[#3B302B] leading-[1.1]">
-                  The Science of <br /> <span className="text-[#8C7A6E] italic">Digital Dermatology</span>
-                </h2>
-                <p className="text-xl text-stone-500 font-light leading-relaxed">
-                  SkinE leverages hyper-spectral neural networks to identify subcutaneous biomarkers often invisible to the human eye.
-                </p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-16">
-                {[
-                  { icon: <Activity className="w-10 h-10" />, title: "Neural Topology mapping", desc: "Our AI evaluates dermal thickness, hydration density, and cellular turnover rates by processing localized light diffraction patterns from high-resolution imagery." },
-                  { icon: <ShieldCheck className="w-10 h-10" />, title: "HIPAA Compliant Privacy", desc: "Security is built into the architecture. All biometric data is processed in ephemeral memory and encrypted using AES-256 standards, never stored on persistent storage." },
-                  { icon: <Sparkles className="w-10 h-10" />, title: "Predictive Aging Logic", desc: "Using longitudinal datasets, we model how your dermal profile will respond to environmental stressors, allowing for preventative rather than reactive care." },
-                  { icon: <Info className="w-10 h-10" />, title: "Formulation Synergy", desc: "Algorithms cross-reference ingredients against 45,000+ chemical reactions to ensure your routine contains only synergistic, stable active compounds." }
-                ].map((item, i) => (
-                  <div key={i} className="space-y-6 p-10 rounded-[3rem] border border-stone-100 hover:border-stone-200 hover:bg-white transition-all">
-                    <div className="w-20 h-20 rounded-3xl bg-stone-50 text-[#4A3C31] flex items-center justify-center border border-stone-100 mb-8 shadow-sm">
-                      {item.icon}
-                    </div>
-                    <h3 className="text-2xl font-serif text-[#3B302B]">{item.title}</h3>
-                    <p className="text-stone-500 font-light leading-relaxed">{item.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
 
           {/* ================= SUPPORT PAGE ================= */}
           {currentPage === 'support' && (
@@ -780,8 +773,8 @@ export function App() {
                   <div className="space-y-8">
                     {[
                       { icon: <MessageSquare className="w-5 h-5" />, label: "Live Clinical Chat", val: "Available 24/7" },
-                      { icon: <Phone className="w-5 h-5" />, label: "Phone Consultation", val: "+1 (888) SKIN-ELITE" },
-                      { icon: <Send className="w-5 h-5" />, label: "Email Support", val: "concierge@skine.elite" }
+                      { icon: <Phone className="w-5 h-5" />, label: "Phone Consultation", val: "01278962472" },
+                      { icon: <Send className="w-5 h-5" />, label: "Email Support", val: "radwaalyan11@gmail.com" }
                     ].map((item, i) => (
                       <div key={i} className="flex gap-6 items-center group cursor-pointer">
                         <div className="w-14 h-14 rounded-2xl bg-stone-100 text-[#4A3C31] flex items-center justify-center border border-stone-200 group-hover:bg-[#4A3C31] group-hover:text-white transition-all shadow-sm">
@@ -875,6 +868,40 @@ export function App() {
               </div>
             </motion.div>
           )}
+
+          {/* ================= SCANNER PAGE ================= */}
+          {currentPage === 'scanner' && (
+            <motion.div key="scanner" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="max-w-4xl mx-auto">
+              <div className="text-center mb-20">
+                <h2 className="text-4xl md:text-5xl font-serif text-[#3B302B] dark:text-stone-100 mb-6">
+                  Product <span className="text-[#8C7A6E] dark:text-[#C2B29F] italic">Scanner</span>
+                </h2>
+                <p className="text-stone-500 dark:text-stone-400 font-light max-w-xl mx-auto leading-relaxed">
+                  Identify pharmaceutical compounds instantly. Point your camera at any product barcode for a deep-dive clinical analysis.
+                </p>
+              </div>
+
+              <div className="relative w-full max-w-2xl mx-auto">
+                <ProductScanner onComplete={() => {}} />
+              </div>
+
+              <div className="mt-20 grid sm:grid-cols-3 gap-8">
+                {[
+                  { icon: <Fingerprint className="w-5 h-5" />, title: "Precision Scan", desc: "Deciphers EAN-13, QR, and clinical pharmaceutical identifiers." },
+                  { icon: <Heart className="w-5 h-5" />, title: "Health Check", desc: "Instantly flags allergens and contraindications for your biotype." },
+                  { icon: <ShieldCheck className="w-5 h-5" />, title: "Verified Data", desc: "Cross-referenced with global pharmaceutical databases." }
+                ].map((tip, i) => (
+                  <div key={i} className="flex gap-4 p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 shadow-sm">
+                    <div className="text-[#8C7A6E] shrink-0 mt-1">{tip.icon}</div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#3B302B] dark:text-stone-100 mb-2">{tip.title}</h4>
+                      <p className="text-xs text-stone-500 dark:text-stone-400 font-light leading-relaxed">{tip.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </main >
 
@@ -961,7 +988,7 @@ export function App() {
                 className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-2xl relative z-10 overflow-hidden border border-white/20"
               >
                 <div className="p-12 pb-6 flex justify-between items-center text-[#3B302B]">
-                  <h3 className="text-3xl font-serif italic">Expert Consultation</h3>
+                  <h3 className="text-3xl font-serif italic">Clinical Consultation</h3>
                   <button onClick={() => setShowConsultModal(false)} className="w-12 h-12 rounded-full hover:bg-stone-100 flex items-center justify-center transition-colors">
                     <Activity className="w-6 h-6 rotate-45" />
                   </button>
@@ -969,12 +996,12 @@ export function App() {
 
                 <div className="p-12 pt-0 space-y-8">
                   <p className="text-stone-500 font-light text-sm leading-relaxed mb-10">
-                    Select a certified dermato-pharmacist for a live secure session.
+                    Select a clinical advisor for a personalized dermal session.
                   </p>
 
                   {[
-                    { name: "Dr. Isabella Vance", role: "Active Formulation Specialist", exp: "12 Yrs Exp", rating: "5.0", available: true },
-                    { name: "Dr. Marcus Thorne", role: "Senior Clinical Pharmacist", exp: "14 Yrs Exp", rating: "4.9", available: false }
+                    { name: "Dr. Rahma Ahmed", role: "Active Formulation Specialist", exp: "12 Yrs Exp", rating: "5.0", available: true, phone: "+201224176366" },
+                    { name: "Dr. Shahd Zaitoon", role: "Clinical Pharmacist", exp: "14 Yrs Exp", rating: "4.9", available: true, phone: "+201155188190" }
                   ].map((doc, i) => (
                     <div key={i} className="group p-8 rounded-[2.5rem] bg-stone-50 border border-stone-100 flex items-center gap-8 hover:bg-white hover:border-[#4A3C31]/20 hover:shadow-xl hover:shadow-stone-900/5 transition-all">
                       <div className="relative shrink-0">
@@ -991,15 +1018,19 @@ export function App() {
                           <span className="flex items-center gap-2"><Clock className="w-3.5 h-3.5" /> {doc.exp}</span>
                         </div>
                       </div>
-                      <button className={`p-4 rounded-2xl transition-all ${doc.available ? 'bg-[#4A3C31] text-white hover:bg-[#3B302B] shadow-lg shadow-[#4A3C31]/20' : 'bg-stone-200 text-stone-400 cursor-not-allowed'}`}>
-                        <ChevronRight className="w-6 h-6" />
-                      </button>
+                      {doc.available ? (
+                        <a href={`https://wa.me/${doc.phone.replace(/\+/g, '')}`} target="_blank" rel="noopener noreferrer" className="p-4 rounded-2xl transition-all bg-[#4A3C31] text-white hover:bg-[#3B302B] shadow-lg shadow-[#4A3C31]/20">
+                          <ChevronRight className="w-6 h-6" />
+                        </a>
+                      ) : (
+                        <button disabled className="p-4 rounded-2xl transition-all bg-stone-200 text-stone-400 cursor-not-allowed">
+                          <ChevronRight className="w-6 h-6" />
+                        </button>
+                      )}
                     </div>
                   ))}
 
-                  <p className="text-[10px] text-stone-400 font-bold uppercase tracking-[0.3em] text-center pt-8 border-t border-stone-100">
-                    HIPAA Encrypted Channel Sec-9
-                  </p>
+
                 </div>
               </motion.div>
             </motion.div>

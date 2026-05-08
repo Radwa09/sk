@@ -260,7 +260,7 @@ export function FaceCapture({ onComplete, className = "" }: FaceCaptureProps) {
 
     return (
         <div className={`relative flex flex-col items-center w-full max-w-2xl mx-auto ${className}`}>
-            <div className="relative w-full aspect-[4/3] bg-stone-100 dark:bg-stone-900 rounded-[3rem] overflow-hidden flex flex-col items-center justify-center border border-stone-200 dark:border-stone-800 shadow-inner">
+            <div className="relative w-full aspect-square md:aspect-[4/3] bg-stone-100 dark:bg-stone-900 rounded-[2.5rem] md:rounded-[3rem] overflow-hidden flex flex-col items-center justify-center border border-stone-200 dark:border-stone-800 shadow-inner">
 
                 {/* IDLE STATE */}
                 {status === 'idle' && (

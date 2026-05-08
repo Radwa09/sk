@@ -20,7 +20,7 @@ export function Login({ onNavigate }: { onNavigate: (page: string) => void }) {
 
         try {
             await login(email, password);
-            const role = email.toLowerCase().includes('admin') ? 'admin' : 'dashboard';
+            const role = email.toLowerCase().includes('admin') ? 'admin' : email.toLowerCase().endsWith('@clinical.com') ? 'pharmacist' : 'dashboard';
             onNavigate(role);
         } catch (err: any) {
             setError(err.message || 'Authentication failed. Please check your credentials.');
